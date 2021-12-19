@@ -1,16 +1,25 @@
 <template>
-	<form action="">
-		<p>add new event</p>
-	</form>
+	<teleport to="#modal">
+		<AddUpdateForm
+			v-if="showForm"
+			@close-form="closeForm()"
+			@add-new-event="add($event)"
+			@update-event="update($event)"
+			:currentEvent="currentEvent"
+		/>
+	</teleport>
     <div class="options">
-      <button @click="showPastEvents = !showPastEvents">show past events</button>
+		<button @click="showPastEvents = !showPastEvents">show past events</button>
+		<button class="addNew" @click="showForm = !showForm">&#43;</button>
     </div>
     <ul>
-        <li v-for="event in orderEvents" :key="event.id">
+        <li v-for="event in orderEvents" :key="event.id" @click="setForm(event)">
             <Event
-             :event="event" 
-             :daysLeft="daysLeft(event)" 
-             :showPastEvents="showPastEvents"/>
+				:event="event" 
+				:daysLeft="daysLeft(event)" 
+				:showPastEvents="showPastEvents"
+				@remove-event="remove($event)"
+			/>
         </li>
     </ul>
 
@@ -62,20 +71,45 @@ const eventData = [
   },
 ];
 
-import Event from './components/Event.vue'
+import Event from './components/Event.vue';
+import AddUpdateForm from './components/AddUpdateForm.vue';
 
 export default {
     name: 'App',
     components: {
-        Event
+        Event,
+		AddUpdateForm
     },
     data() {
         return {
             events: eventData,
             showPastEvents: true,
+			showForm: false,
+			currentEvent: {},
         }
     },
     methods: {
+		findEventIndex(id) {
+			return this.events.findIndex((el) => el.id === id);
+		},
+		remove(event) {
+			this.events.splice(this.findEventIndex(event.id), 1);
+		},
+		closeForm() {
+			this.showForm = false;
+			this.currentEvent = {};
+		},
+		update(event) {
+			this.events[this.findEventIndex(event.id)] = event;
+		},
+		setForm(event) {
+			this.currentEvent = event || {};
+			this.showForm = true;
+		},
+		add(event) {
+			event.id = this.events.length + 1;
+			this.events.push(event);
+		},
         daysLeft(event) {
             const Time = Date.parse(event.date) - Date.now();
             const Days = Math.ceil(Time / (1000 * 3600 * 24));
